@@ -10,6 +10,7 @@ out
 Thumbs.db
 
 # Editor
+.idea/
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
