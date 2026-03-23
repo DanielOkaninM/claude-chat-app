@@ -52,11 +52,6 @@ app.whenReady().then(() => {
     mainWindow.webContents.send('shortcut:new-chat')
   })
 
-  // Cmd+W — close active chat
-  globalShortcut.register('CommandOrControl+W', () => {
-    mainWindow.webContents.send('shortcut:close-chat')
-  })
-
   // Cmd+K — command palette
   globalShortcut.register('CommandOrControl+K', () => {
     mainWindow.webContents.send('shortcut:command-palette')

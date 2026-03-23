@@ -282,14 +282,6 @@ function App() {
 
     const unsubShortcut = window.api.onNewTerminalShortcut(createTerminal)
 
-    // Cmd+W — close active chat
-    const unsubClose = window.api.onCloseTerminalShortcut(() => {
-      const { activeTerminalId } = useTerminalStore.getState()
-      if (activeTerminalId) {
-        deleteTerminal(activeTerminalId)
-      }
-    })
-
     // Cmd+K — command palette
     const unsubPalette = window.api.onCommandPaletteShortcut(() => {
       const { showCommandPalette } = useTerminalStore.getState()
@@ -306,7 +298,6 @@ function App() {
       unsubExit()
       unsubTitle()
       unsubShortcut()
-      unsubClose()
       unsubPalette()
       unsubSwitch()
     }

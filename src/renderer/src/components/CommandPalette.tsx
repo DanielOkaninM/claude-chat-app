@@ -77,7 +77,7 @@ export function CommandPalette() {
       cmds.push({
         id: 'close-chat',
         label: 'Close current chat',
-        description: 'Close the active chat (Cmd+W)',
+        description: 'Close the active chat',
         icon: 'close',
         action: () => { setShowCommandPalette(false); deleteTerminal(activeTerminalId) }
       })
