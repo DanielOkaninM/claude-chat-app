@@ -1,7 +1,7 @@
 import { ipcMain, dialog, BrowserWindow } from 'electron'
 import { execSync, spawn, ChildProcess } from 'child_process'
-import { readFileSync, openSync, readSync, fstatSync, closeSync } from 'fs'
-import { join } from 'path'
+import { readFileSync, readdirSync, statSync, openSync, readSync, fstatSync, closeSync } from 'fs'
+import { join, resolve, basename } from 'path'
 import { homedir } from 'os'
 import { is } from '@electron-toolkit/utils'
 import { ChatStore } from './services/chat-store'
@@ -301,6 +301,91 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
         } catch { continue }
       }
       return null
+    } catch {
+      return null
+    }
+  })
+
+  // Cache plan refs per session to avoid re-reading large JSONL files
+  const planRefsCache = new Map<string, { size: number; refs: Set<string> }>()
+
+  ipcMain.handle('plans:get-session-plan', (_event, sessionId: string, workingDirectory: string) => {
+    try {
+      const projectKey = workingDirectory.replace(/\//g, '-')
+      const sessionFile = join(homedir(), '.claude', 'projects', projectKey, `${sessionId}.jsonl`)
+      const plansDir = join(homedir(), '.claude', 'plans')
+
+      const fileStat = statSync(sessionFile)
+      const cached = planRefsCache.get(sessionFile)
+
+      let planRefs: Set<string>
+      if (cached && cached.size === fileStat.size) {
+        planRefs = cached.refs
+      } else {
+        const content = readFileSync(sessionFile, 'utf-8')
+        planRefs = new Set<string>()
+        for (const line of content.split('\n')) {
+          const matches = line.matchAll(/\.claude\/plans\/([a-z0-9-]+\.md)/g)
+          for (const m of matches) {
+            planRefs.add(m[1])
+          }
+        }
+        planRefsCache.set(sessionFile, { size: fileStat.size, refs: planRefs })
+      }
+
+      if (planRefs.size === 0) return null
+
+      let bestPlan: { name: string; content: string; modifiedAt: number } | null = null
+      for (const name of planRefs) {
+        try {
+          const filePath = join(plansDir, name)
+          const stat = statSync(filePath)
+          const planContent = readFileSync(filePath, 'utf-8')
+          if (!bestPlan || stat.mtimeMs > bestPlan.modifiedAt) {
+            bestPlan = { name, content: planContent, modifiedAt: stat.mtimeMs }
+          }
+        } catch { /* plan file may have been deleted */ }
+      }
+
+      return bestPlan
+    } catch {
+      return null
+    }
+  })
+
+  ipcMain.handle('plans:list', () => {
+    try {
+      const plansDir = join(homedir(), '.claude', 'plans')
+      const files = readdirSync(plansDir).filter(f => f.endsWith('.md'))
+
+      return files.map(name => {
+        const filePath = join(plansDir, name)
+        const stat = statSync(filePath)
+        // Read only the first 512 bytes to extract the title
+        const fd = openSync(filePath, 'r')
+        const buf = Buffer.alloc(512)
+        const bytesRead = readSync(fd, buf, 0, 512, 0)
+        closeSync(fd)
+        const head = buf.toString('utf-8', 0, bytesRead)
+        const titleMatch = head.match(/^#\s+(.+)/m)
+        return {
+          name,
+          title: titleMatch ? titleMatch[1] : name.replace('.md', ''),
+          modifiedAt: stat.mtimeMs
+        }
+      }).sort((a, b) => b.modifiedAt - a.modifiedAt)
+    } catch {
+      return []
+    }
+  })
+
+  ipcMain.handle('plans:read', (_event, name: string) => {
+    try {
+      const plansDir = join(homedir(), '.claude', 'plans')
+      const safeName = basename(name)
+      const filePath = resolve(plansDir, safeName)
+      if (!filePath.startsWith(plansDir)) return null
+      return readFileSync(filePath, 'utf-8')
     } catch {
       return null
     }

@@ -69,6 +69,10 @@ const api = {
     ipcRenderer.on('shortcut:switch-chat', handler)
     return () => ipcRenderer.removeListener('shortcut:switch-chat', handler)
   },
+  getSessionPlan: (sessionId: string, workingDirectory: string) =>
+    ipcRenderer.invoke('plans:get-session-plan', sessionId, workingDirectory),
+  listPlans: () => ipcRenderer.invoke('plans:list'),
+  readPlan: (name: string) => ipcRenderer.invoke('plans:read', name),
   voiceStart: () => ipcRenderer.invoke('voice:start'),
   voiceStop: () => ipcRenderer.invoke('voice:stop'),
   voiceCancel: () => ipcRenderer.invoke('voice:cancel'),

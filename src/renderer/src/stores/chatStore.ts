@@ -30,6 +30,7 @@ interface TerminalState {
   sidebarWidth: number
   filesPanelWidth: number
   showCommandPalette: boolean
+  showPlanView: boolean
 
   loadTerminals: () => Promise<void>
   setActiveTerminal: (id: string) => void
@@ -51,6 +52,7 @@ interface TerminalState {
   setSidebarWidth: (width: number) => void
   setFilesPanelWidth: (width: number) => void
   setShowCommandPalette: (show: boolean) => void
+  setShowPlanView: (show: boolean) => void
   switchToIndex: (index: number) => void
 }
 
@@ -66,6 +68,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   sidebarWidth: 256,
   filesPanelWidth: 288,
   showCommandPalette: false,
+  showPlanView: false,
 
   loadTerminals: async () => {
     const terminals = await window.api.listTerminals()
@@ -252,6 +255,10 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
 
   setShowCommandPalette: (show: boolean) => {
     set({ showCommandPalette: show })
+  },
+
+  setShowPlanView: (show: boolean) => {
+    set({ showPlanView: show })
   },
 
   switchToIndex: (index: number) => {

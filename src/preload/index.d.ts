@@ -35,6 +35,9 @@ declare global {
       onCloseTerminalShortcut: (callback: () => void) => () => void
       onCommandPaletteShortcut: (callback: () => void) => () => void
       onSwitchChatShortcut: (callback: (index: number) => void) => () => void
+      getSessionPlan: (sessionId: string, workingDirectory: string) => Promise<{ name: string; content: string; modifiedAt: number } | null>
+      listPlans: () => Promise<{ name: string; title: string; modifiedAt: number }[]>
+      readPlan: (name: string) => Promise<string | null>
       voiceStart: () => Promise<boolean>
       voiceStop: () => Promise<void>
       voiceCancel: () => Promise<void>
